@@ -11,8 +11,10 @@ void print_buff(char *, int);
 int  setup_buff(char *, char *, int);
 
 //prototypes for functions to handle required functionality
-int  count_words(char *, int, int);
-//add additional prototypes here
+int  count_words(char *, int);
+void  reverse_string(char *, int);
+void  word_print(char *, int);
+char* search_and_replace(char *, int, int, char *, char *);
 
 
 int setup_buff(char *buff, char *user_str, int len){
@@ -21,7 +23,7 @@ int setup_buff(char *buff, char *user_str, int len){
     size_t string_finished = 0;
     size_t user_str_len = 0;
     size_t extra_whitespace = 0;        //used to keep track of the correct position in buff to write to
-    
+
     for (int i=0; i<len; i++){
         if (string_finished) {
             *(buff+i-extra_whitespace) = '.';
@@ -52,10 +54,11 @@ int setup_buff(char *buff, char *user_str, int len){
 }
 
 void print_buff(char *buff, int len){
-    printf("Buffer:  ");
+    printf("Buffer:  [");
     for (int i=0; i<len; i++){
         putchar(*(buff+i));
     }
+    putchar(']');
     putchar('\n');
 }
 
@@ -64,7 +67,7 @@ void usage(char *exename){
 
 }
 
-int count_words(char *buff, int len, int str_len){
+int count_words(char *buff, int str_len){
     int wc = 0;
     size_t word_start = 0;
 
@@ -80,11 +83,142 @@ int count_words(char *buff, int len, int str_len){
             word_start = !(*(buff+i) == ' ');
         }
     }
-    printf("%d\n", wc);
     return wc;
 }
 
-//ADD OTHER HELPER FUNCTIONS HERE FOR OTHER REQUIRED PROGRAM OPTIONS
+void reverse_string(char *buff, int str_len) {
+    char tmp_char;
+    int end_idx = str_len - 1;
+
+    for (int i=0; i<(str_len/2); i++) {
+        tmp_char = *(buff+i);
+        *(buff+i) = *(buff+end_idx-i);
+        *(buff+end_idx-i) = tmp_char;
+    }
+
+    //print new message
+    printf("Reversed String: ");
+    for (int i=0; i<str_len; i++) {
+        printf("%c", *(buff+i));
+    }
+    puts("");
+
+    return;
+}
+
+void word_print(char *buff, int str_len) {
+    int last_char_idx = str_len-1;  //index of last char - strlen(str)-1;
+    int wc = 0;         //counts words
+    int wlen = 0;       //length of current word
+    size_t word_start = 0;    //am I at the start of a new word
+
+    for (int i = 0; i < str_len; i++){
+        if (!word_start){
+            if (*(buff+i) == ' '){
+                continue;
+            } else {
+                wc++;
+                word_start = 1;
+                wlen = 1;
+                printf("%d. ", wc);
+                printf("%c", *(buff+i));
+            }
+        } else {
+            if (*(buff+i) == ' '){
+                printf(" (%d)\n", wlen);
+                word_start = 0;
+                wlen = 0;
+            } else {
+                wlen++;
+                printf("%c", *(buff+i));
+            }
+        }
+        if (i == last_char_idx) {
+            printf(" (%d)\n", wlen);
+        }
+    }
+}
+
+char* search_and_replace(char *buff, int len, int str_len, char *old, char *new) {
+    int matching = 0;
+    size_t chars_into_old = 0;
+    size_t copy_from_index;         // index directly following the matched word
+    int bytes_from_beginning;       // amount of bytes to copy from the beginning of the buffer.
+    int new_str_len = str_len;
+    char *temp_old = old;
+    char *temp_new = new;
+    int previous_space = 1;
+
+    // checking if the new string would be too long
+    while (*temp_old != '\0') {
+        new_str_len--;
+        temp_old++;
+    }
+
+    while (*temp_new != '\0') {
+        new_str_len++;
+        temp_new++;
+
+        if (new_str_len > len) {
+            puts("New string would be too long.");
+            exit(-1);
+        }
+    }
+
+    // searching for a match section (only switches once with this implementation)
+    for (int i=0; i<str_len; i++) {
+        if (*(buff+i) == *(old+chars_into_old)){
+            if (!matching && previous_space) {        //start of potential match
+                matching = 1;
+                bytes_from_beginning = i;  
+            }
+            chars_into_old++; 
+        } else {
+            if (matching) {             //thought we had a match but didn't, reset the vars
+                chars_into_old = 0;
+                matching = 0;
+            }
+        }
+
+        if (matching && *(old+chars_into_old) == '\0' && *(buff+i+1) == ' ') {    //found the match, switch it
+            copy_from_index = i+1;
+            char *new_buff = (char*)malloc(BUFFER_SZ);
+            if (buff == NULL) {
+                puts("Error allocating memory");
+                exit(99);
+            }
+
+            memcpy(new_buff, buff, bytes_from_beginning);
+
+            char *ptr_to_beg = new_buff;        //for return later
+            for (int i=0; i<=bytes_from_beginning; i++) {new_buff++;}
+            while (*new != '\0') {
+                *new_buff = *new;
+                new_buff++;
+                new++;
+            }
+
+            int len_diff = new_str_len - str_len;
+            //new message is one character too short and I can't figure out why
+            memcpy(new_buff, buff+copy_from_index, BUFFER_SZ-copy_from_index-len_diff);
+            memset((ptr_to_beg+new_str_len+1), '.', (BUFFER_SZ-new_str_len+1));
+
+            //print new message
+            printf("Modified String: ");
+            for (int i=0; i<=new_str_len; i++) {
+                printf("%c", *(ptr_to_beg+i));
+            }
+            puts("");
+
+            free(buff);
+            return ptr_to_beg;
+        }
+
+        previous_space = (*(buff+i) == ' ');
+    }
+
+    return buff;
+}
 
 int main(int argc, char *argv[]){
 
@@ -135,27 +269,45 @@ int main(int argc, char *argv[]){
     // CODE GOES HERE FOR #3
     buff = (char*)malloc(BUFFER_SZ);
     if (buff == NULL) {
+        puts("Error allocating memory");
         exit(99);
     }
 
     user_str_len = setup_buff(buff, input_string, BUFFER_SZ);
     if (user_str_len < 0){
-        printf("Error setting up buffer, error = %d", user_str_len);
+        printf("Error setting up buffer, error = %d\n", user_str_len);
         exit(2);
     }
 
     switch (opt){
         case 'c':
-            rc = count_words(buff, BUFFER_SZ, user_str_len);  //you need to implement
+            rc = count_words(buff, user_str_len); 
             if (rc < 0){
                 printf("Error counting words, rc = %d", rc);
                 exit(2);
             }
             printf("Word Count: %d\n", rc);
             break;
+        
+        case 'r':
+            reverse_string(buff, user_str_len);
+            break;
 
-        //TODO:  #5 Implement the other cases for 'r' and 'w' by extending
-        //       the case statement options
+        case 'w':
+            puts("Word Print");
+            puts("----------");
+            word_print(buff, user_str_len);
+            break;
+
+        case 'x':
+            if (argc < 5){
+               usage(argv[0]);
+                exit(1);
+            }
+            
+            buff = search_and_replace(buff, BUFFER_SZ, user_str_len, argv[3], argv[4]);
+            break;
+
         default:
             usage(argv[0]);
             exit(1);
@@ -174,3 +326,8 @@ int main(int argc, char *argv[]){
 //          the buff variable will have exactly 50 bytes?
 //  
 //          PLACE YOUR ANSWER HERE
+/*
+Provided both the pointer to and length of the buffer helps ensure we don't write to
+memory we don't "own". It also helps in a function like search_and_replace where a
+new buffer of identical size is made.
+*/
