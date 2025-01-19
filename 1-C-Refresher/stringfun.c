@@ -18,10 +18,9 @@ char* search_and_replace(char *, int, int, char *, char *);
 
 
 int setup_buff(char *buff, char *user_str, int len){
-    //TODO: #4:  Implement the setup buff as per the directions
-    size_t previous_whitespace = 0;     //to track whether the previous char was whitespace
+    size_t previous_whitespace = 1;     //to track whether the previous char was whitespace
     size_t string_finished = 0;
-    size_t user_str_len = 0;
+    int user_str_len = 0;
     size_t extra_whitespace = 0;        //used to keep track of the correct position in buff to write to
 
     for (int i=0; i<len; i++){
@@ -30,7 +29,11 @@ int setup_buff(char *buff, char *user_str, int len){
         } else if (*(user_str+i) == '\0') {
             string_finished = 1;
             *(buff+i-extra_whitespace) = '.';
-            user_str_len = i;
+            user_str_len = (i-extra_whitespace);
+
+            if (*(buff+i-extra_whitespace-1) == ' ') {
+                *(buff+i-extra_whitespace-1) = '.';
+            }
         } else if (*(user_str+i) == ' ' || *(user_str+i) == '\t') {
             if (previous_whitespace) {
                 extra_whitespace++;
@@ -96,7 +99,6 @@ void reverse_string(char *buff, int str_len) {
         *(buff+end_idx-i) = tmp_char;
     }
 
-    //print new message
     printf("Reversed String: ");
     for (int i=0; i<str_len; i++) {
         printf("%c", *(buff+i));
@@ -160,7 +162,7 @@ char* search_and_replace(char *buff, int len, int str_len, char *old, char *new)
         temp_new++;
 
         if (new_str_len > len) {
-            puts("New string would be too long.");
+            puts("New string would be too long. Exiting...");
             exit(-1);
         }
     }
@@ -188,10 +190,11 @@ char* search_and_replace(char *buff, int len, int str_len, char *old, char *new)
                 exit(99);
             }
 
-            memcpy(new_buff, buff, bytes_from_beginning);
+            memcpy(new_buff, buff, bytes_from_beginning);       //copy over first part
 
             char *ptr_to_beg = new_buff;        //for return later
-            for (int i=0; i<=bytes_from_beginning; i++) {new_buff++;}
+            //copy over the new word
+            for (int i=1; i<=bytes_from_beginning; i++) {new_buff++;}
             while (*new != '\0') {
                 *new_buff = *new;
                 new_buff++;
@@ -199,7 +202,7 @@ char* search_and_replace(char *buff, int len, int str_len, char *old, char *new)
             }
 
             int len_diff = new_str_len - str_len;
-            //new message is one character too short and I can't figure out why
+            //copy over second part and fill the rest with .
             memcpy(new_buff, buff+copy_from_index, BUFFER_SZ-copy_from_index-len_diff);
             memset((ptr_to_beg+new_str_len+1), '.', (BUFFER_SZ-new_str_len+1));
 
