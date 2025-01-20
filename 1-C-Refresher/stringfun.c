@@ -18,10 +18,10 @@ char* search_and_replace(char *, int, int, char *, char *);
 
 
 int setup_buff(char *buff, char *user_str, int len){
-    size_t previous_whitespace = 1;     //to track whether the previous char was whitespace
-    size_t string_finished = 0;
+    int previous_whitespace = 1;     //to track whether the previous char was whitespace
+    int string_finished = 0;
     int user_str_len = 0;
-    size_t extra_whitespace = 0;        //used to keep track of the correct position in buff to write to
+    int extra_whitespace = 0;        //used to keep track of the correct position in buff to write to
 
     for (int i=0; i<len; i++){
         if (string_finished) {
@@ -31,13 +31,14 @@ int setup_buff(char *buff, char *user_str, int len){
             *(buff+i-extra_whitespace) = '.';
             user_str_len = (i-extra_whitespace);
 
-            if (*(buff+i-extra_whitespace-1) == ' ') {
+            //special case where final char was whitespace
+            if (*(buff+i-extra_whitespace-1) == ' ' || *(buff+i-extra_whitespace-1) == '\t') {
                 *(buff+i-extra_whitespace-1) = '.';
             }
         } else if (*(user_str+i) == ' ' || *(user_str+i) == '\t') {
             if (previous_whitespace) {
                 extra_whitespace++;
-                len++;
+                len++;              //len is incremented to ensure the loop runs enough times despite the extra whitespace
                 continue;
             } else {
                 *(buff+i-extra_whitespace) = ' ';
@@ -72,7 +73,7 @@ void usage(char *exename){
 
 int count_words(char *buff, int str_len){
     int wc = 0;
-    size_t word_start = 0;
+    int word_start = 0;
 
     for (int i = 0; i < str_len; i++){
         if (!word_start){
@@ -112,7 +113,7 @@ void word_print(char *buff, int str_len) {
     int last_char_idx = str_len-1;  //index of last char - strlen(str)-1;
     int wc = 0;         //counts words
     int wlen = 0;       //length of current word
-    size_t word_start = 0;    //am I at the start of a new word
+    int word_start = 0;    //am I at the start of a new word
 
     for (int i = 0; i < str_len; i++){
         if (!word_start){
@@ -206,7 +207,6 @@ char* search_and_replace(char *buff, int len, int str_len, char *old, char *new)
             memcpy(new_buff, buff+copy_from_index, BUFFER_SZ-copy_from_index-len_diff);
             memset((ptr_to_beg+new_str_len+1), '.', (BUFFER_SZ-new_str_len+1));
 
-            //print new message
             printf("Modified String: ");
             for (int i=0; i<=new_str_len; i++) {
                 printf("%c", *(ptr_to_beg+i));
@@ -220,6 +220,7 @@ char* search_and_replace(char *buff, int len, int str_len, char *old, char *new)
         previous_space = (*(buff+i) == ' ');
     }
 
+    //returning pointer to original buffer if the word was not found, essentially changing nothing
     return buff;
 }
 
@@ -266,10 +267,6 @@ int main(int argc, char *argv[]){
 
     input_string = argv[2]; //capture the user input string
 
-    //TODO:  #3 Allocate space for the buffer using malloc and
-    //          handle error if malloc fails by exiting with a 
-    //          return code of 99
-    // CODE GOES HERE FOR #3
     buff = (char*)malloc(BUFFER_SZ);
     if (buff == NULL) {
         puts("Error allocating memory");
@@ -316,7 +313,6 @@ int main(int argc, char *argv[]){
             exit(1);
     }
 
-    //TODO:  #6 Dont forget to free your buffer before exiting
     print_buff(buff,BUFFER_SZ);
     free(buff);
     exit(0);
@@ -330,7 +326,7 @@ int main(int argc, char *argv[]){
 //  
 //          PLACE YOUR ANSWER HERE
 /*
-Provided both the pointer to and length of the buffer helps ensure we don't write to
+Providing both the pointer to and length of the buffer can help ensure we don't write to
 memory we don't "own". It also helps in a function like search_and_replace where a
 new buffer of identical size is made.
 */
