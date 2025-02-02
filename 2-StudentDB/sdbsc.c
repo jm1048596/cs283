@@ -70,7 +70,7 @@ int get_student(int fd, int id, student_t *s)
     rc = read(fd, s, STUDENT_RECORD_SIZE);
     if (rc == -1) {
         return(ERR_DB_FILE);
-    } else if (rc == 0) {
+    } else if ((rc == 0) || (memcmp(s, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) == 0)) {
         return(SRCH_NOT_FOUND);
     } else {
         return(NO_ERROR);
@@ -291,9 +291,43 @@ int count_db_records(int fd)
  */
 int print_db(int fd)
 {
-    // TODO
-    printf(M_NOT_IMPL);
-    return NOT_IMPLEMENTED_YET;
+    //var to track if the header should be output
+    int firstItem = 1;
+    student_t student;
+    int rc;
+    float fGPA;
+
+    rc = lseek(fd, 0, SEEK_SET);
+    if (rc == -1) {
+        printf(M_ERR_DB_READ);
+        return(ERR_DB_FILE);
+    }
+
+    while ( (rc = read(fd, &student, STUDENT_RECORD_SIZE)) > 0) {
+        //check if it's empty
+        if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) == 0) {
+            continue;
+        }
+
+        if (firstItem) {
+            printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST_NAME", "LAST_NAME", "GPA");
+            firstItem = 0;
+        }
+
+        fGPA = student.gpa / 100.0;
+        printf(STUDENT_PRINT_FMT_STRING, student.id, student.fname, student.lname, fGPA);
+    }
+
+    if (rc == -1) {
+        printf(M_ERR_DB_READ);
+        return(ERR_DB_FILE);
+    }
+
+    if (firstItem) {
+        printf(M_DB_EMPTY);
+    }
+
+    return NO_ERROR;
 }
 
 /*
@@ -326,8 +360,15 @@ int print_db(int fd)
  */
 void print_student(student_t *s)
 {
-    // TODO
-    printf(M_NOT_IMPL);
+    if ((s == NULL) || (s->id == 0)) {
+        printf(M_ERR_STD_PRINT);
+    }
+
+    float fGPA = (s->gpa) / 100.0;
+
+    printf(STUDENT_PRINT_HDR_STRING, "ID", "FIRST NAME", "LAST_NAME", "GPA");
+
+    printf(STUDENT_PRINT_FMT_STRING, s->id, s->fname, s->lname, fGPA);
 }
 
 /*
