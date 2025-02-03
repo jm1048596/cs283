@@ -117,26 +117,13 @@ int add_student(int fd, int id, char *fname, char *lname, int gpa)
         return(ERR_DB_FILE);
     }
 
+    //if there's already a student with that id, don't add the new one
     if (rc == STUDENT_RECORD_SIZE) {
         printf(M_ERR_DB_ADD_DUP, id);
         return(ERR_DB_OP);
     }
 
-    // *** delete this when done, just keeping it for now to be safe ***
-    // if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) == 0) {
-    //     student_t newStudent;
-    //     newStudent.id = id;
-    //     strcpy(newStudent.fname, fname);
-    //     strcpy(newStudent.lname, lname);
-    //     newStudent.gpa = gpa;
-
-    //     rc = write(fd, &newStudent, STUDENT_RECORD_SIZE);
-    //     if (rc == -1) {
-    //         printf(M_ERR_DB_WRITE);
-    //         return(ERR_DB_FILE);
-    //     }
-    // }
-
+    //otherwise, do add the new one
     student_t newStudent;
     newStudent.id = id;
     strcpy(newStudent.fname, fname);
@@ -196,6 +183,7 @@ int del_student(int fd, int id)
         return(ERR_DB_FILE);
     }
 
+    //overwriting the student record with an empty one
     rc = write(fd, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE);
     if (rc == -1) {
         printf(M_ERR_DB_WRITE);
@@ -237,6 +225,7 @@ int count_db_records(int fd)
     int rc;
 
     while( (rc = read(fd, &student, STUDENT_RECORD_SIZE)) > 0) {
+        //if it's not an empty record, increase count
         if (memcmp(&student, &EMPTY_STUDENT_RECORD, STUDENT_RECORD_SIZE) != 0) {
             count++;
         }
@@ -323,6 +312,7 @@ int print_db(int fd)
         return(ERR_DB_FILE);
     }
 
+    //firstItem will still be true here if no records were found
     if (firstItem) {
         printf(M_DB_EMPTY);
     }
