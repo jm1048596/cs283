@@ -60,20 +60,48 @@ int main()
         cmd_buff[strcspn(cmd_buff,"\n")] = '\0';
 
         //IMPLEMENT THE REST OF THE REQUIREMENTS
-        if (strncmp(cmd_buff, EXIT_CMD, 4) == 0) {
+        //exit
+        if ( (strncmp(cmd_buff, EXIT_CMD, 4) == 0) && ((strlen(cmd_buff) == 4) || (cmd_buff[4] == ' ')) ) {
             break;
         }
+        //dragon
+        if ( (strncmp(cmd_buff, "dragon", 6) == 0) && ((strlen(cmd_buff) == 6) || (cmd_buff[6] == ' ')) ) {
+            FILE *file = fopen("drgn.txt", "r");
+            if (!file) {
+                perror("Failed to open file");
+                return 1;
+            }
 
+            char line[256];  // Buffer for each line
+            while (fgets(line, sizeof(line), file)) {
+                printf("%s", line);
+            }
+            puts("");
+
+            fclose(file);
+            continue;
+        }
+
+        //command parsing section
         rc = build_cmd_list(cmd_buff, &clist);
 
         if (rc == ERR_TOO_MANY_COMMANDS) {
             printf(CMD_ERR_PIPE_LIMIT, CMD_MAX);
-        }
-
-        if (clist.num == 0) {
+        } else if (clist.num == 0) {
             printf(CMD_WARN_NO_CMD);
         } else {
             printf(CMD_OK_HEADER, clist.num);
+            for (int i=0; i<clist.num; i++) {
+
+                printf("<%d> %s", i+1, clist.commands[i].exe);
+                if (strlen(clist.commands[i].args) != 0) {
+                    printf(" [%s]", clist.commands[i].args);
+                }
+                puts("");
+                clist.commands[i].exe[0] = '\0';
+                clist.commands[i].args[0] = '\0';
+
+            }
         }
     }
 

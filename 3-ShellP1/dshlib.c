@@ -6,7 +6,7 @@
 #include "dshlib.h"
 
 char* removeExtraWS(char **list, char *string, int len, int entryNum) {
-    int previousWS = 1;
+    int previousWS = 1;     //var to keep track of whether or not the previous character was whitespace
     int newLen = 0;
 
     char *newString = (char*)malloc(strlen(string));
@@ -29,10 +29,10 @@ char* removeExtraWS(char **list, char *string, int len, int entryNum) {
         }
         
     }
-    if (newString[strlen(newString) - 1] == ' ') {
-        newString[strlen(newString) - 1] = '\0';
+    if (newString[newLen - 1] == ' ') {
+        newString[newLen - 1] = '\0';
     } else {
-        newString[strlen(newString)] = '\0';
+        newString[newLen] = '\0';
     }
 
     free(list[entryNum]);
@@ -69,8 +69,8 @@ char* removeExtraWS(char **list, char *string, int len, int entryNum) {
 int build_cmd_list(char *cmd_line, command_list_t *clist)
 {
     char *curCom;
-    char *split;
-    char *clistTemp[CMD_MAX];
+    char *split;        //keeps track of where to split between exe and args
+    char *clistTemp[CMD_MAX];       //to load all the commands in prior to individual parsing
 
     clist->num = 0;
 
@@ -95,29 +95,28 @@ int build_cmd_list(char *cmd_line, command_list_t *clist)
         curCom = strtok(NULL, PIPE_STRING);
     }
 
+    //then indivdually parse each command and store them into the passed clist
     for (int i = 0; i < clist->num; i++) {
         clistTemp[i] = removeExtraWS(clistTemp, clistTemp[i], strlen(clistTemp[i]), i);
+        //empty command = ignore
         if (strlen(clistTemp[i]) == 0) {
             clist->num--;
             continue;
         }
-        printf("%s\n\n", clistTemp[i]);
 
         split = strchr(clistTemp[i], SPACE_CHAR);
 
+        //if no args, only fill exe and ensure args is an empty string
         if (split == NULL) {
             strcpy(clist->commands[i].exe, clistTemp[i]);
             clist->commands[i].exe[strlen(clistTemp[i])] = '\0';
-
-            printf("%s\n", clist->commands[i].exe);
+            clist->commands[i].args[0] = '\0';
         } else {
             strncpy(clist->commands[i].exe, clistTemp[i], split-clistTemp[i]);
             clist->commands[i].exe[split-clistTemp[i]] = '\0';
 
             strcpy(clist->commands[i].args, (split+1));
             clist->commands[i].args[strlen(clist->commands[i].args)] = '\0';
-
-            printf("%s: %s\n",  clist->commands[i].exe, clist->commands[i].args);
         }
 
         free(clistTemp[i]);
