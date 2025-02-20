@@ -10,14 +10,14 @@
 
 int loadCMD(cmd_buff_t *cmd, char *buff, int len) {
     int previousWS = 1;     //var to keep track of whether or not the previous character was whitespace
-    int inQuote = 0;
-    char tempString[SH_CMD_MAX];
+    int inQuote = 0;        //var to keep track of whether or not we're currently inside quotes
+    char tempString[SH_CMD_MAX];        //array to hold the argument before allocating space for it
     
     int argLen = 0;
     for (int i = 0; i < len; i++) {
         if (cmd->argc >= 8) {
-            printf(CMD_ERR_PIPE_LIMIT, CMD_MAX);
-            return ERR_TOO_MANY_COMMANDS;
+            printf("Too many arguments");
+            return ERR_CMD_OR_ARGS_TOO_BIG;
         }
 
         if (buff[i] == '\"') {
@@ -115,16 +115,6 @@ int exec_local_cmd_loop()
     int rc = 0;
     cmd_buff_t cmd;
 
-    // TODO IMPLEMENT MAIN LOOP
-
-    // TODO IMPLEMENT parsing input to cmd_buff_t *cmd_buff
-
-    // TODO IMPLEMENT if built-in command, execute builtin logic for exit, cd (extra credit: dragon)
-    // the cd command should chdir to the provided directory; if no directory is provided, do nothing
-
-    // TODO IMPLEMENT if not built-in command, fork/exec as an external command
-    // for example, if the user input is "ls -l", you would fork/exec the command "ls" with the arg "-l"
-
     while(1){
         printf("%s", SH_PROMPT);
         if (fgets(cmd_buff, ARG_MAX, stdin) == NULL){
@@ -155,15 +145,21 @@ int exec_local_cmd_loop()
             continue;
         }
         if (strcmp(exe, "cd") == 0) {
-            if (cmd.argc > 0) {
-                chdir(cmd.argv[1]);
+            if (cmd.argc > 1) {
+                rc = chdir(cmd.argv[1]);
+                //check if an error occured (usually that the directory wasn't found)
+                if (rc < 0) {
+                    printf("dsh: cd: %s: ", cmd.argv[1]);
+                    fflush(stdout);
+                    perror("");
+                }
             }
             continue;
         }
 
         //fork/exec
 
-        int f_result;
+        int f_result, c_result;
 
         f_result = fork();
         if (f_result < 0)
@@ -178,16 +174,15 @@ int exec_local_cmd_loop()
             rc = execvp(cmd.argv[0], cmd.argv);
             if (rc < 0)
             {
-                perror("fork error");
-                exit(42);
+                perror("External command failed with message");
+                exit(ERR_EXEC_CMD);
             }
         } 
         //parent waits for child to be done
         else {
-            sleep(1);
+            wait(&c_result);
         }
 
-        //TODO: move freedom outside loop and empty cmd if necessary
         //freedom
         for (int i=0; i<cmd.argc; i++) {
             free(cmd.argv[i]);
