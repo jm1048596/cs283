@@ -500,7 +500,7 @@ int rsh_execute_pipeline(int cli_sock, command_list_t *clist) {
             // Execute command
             execvp(clist->commands[i].argv[0], clist->commands[i].argv);
             perror("execvp");
-            return EXIT_FAILURE;
+            exit(EXIT_FAILURE);  //changed to exit from return, was getting a weird error
         }
     }
 

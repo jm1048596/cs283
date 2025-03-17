@@ -139,7 +139,7 @@ int exec_remote_cmd_loop(char *address, int port)
 
         // recv all the results
         while ((io_size= recv(cli_socket, rsp_buff, RDSH_COMM_BUFF_SZ,0)) > 0){
-            //we got recv_size bytes
+            //we got io_size bytes
             if (io_size < 0){
                 return ERR_RDSH_COMMUNICATION;
             }
@@ -161,11 +161,6 @@ int exec_remote_cmd_loop(char *address, int port)
             //until it encounters a null byte or prints out a max of io_size
             //characters, whatever happens first. 
             printf("%.*s", (int)io_size, rsp_buff);
-            // puts("testing");
-            // for (int i=0; i<io_size; i++) {
-            //     printf("io size : %d\n", io_size);
-            //     printf("%c\n", *(rsp_buff+i));
-            // }
         
             //If we are not at the last chunk, loop back and receive some more, if it
             //is the last chunk break out of the loop
@@ -178,6 +173,9 @@ int exec_remote_cmd_loop(char *address, int port)
             break;
         }
         if (strncmp(cmd_buff, "stop-server", 11) == 0) {
+            break;
+        }
+        if (io_size == 0) {
             break;
         }
     }
